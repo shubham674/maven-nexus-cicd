@@ -13,101 +13,98 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
 
     steps:
-      # Checkout code
-      - name: Checkout code
-        uses: actions/checkout@v3
+    # Checkout code
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      # Set up NodeJS
-      - name: Set up NodeJS
-        uses: actions/setup-node@v3
-        with:
-          node-version: '14'
+    # Set up NodeJS
+    - name: Set up NodeJS
+      uses: actions/setup-node@v3
+      with:
+        node-version: '14'
 
-      # Install NodeJS dependencies
-      - name: Install NodeJS dependencies
-        run: npm install
+    # Install NodeJS dependencies
+    - name: Install NodeJS dependencies
+      run: npm install
 
-      # SonarQube Scan
-      - name: SonarQube Scan
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
-          unzip sonar-scanner.zip
-          export PATH="$PWD/sonar-scanner-5.0.1.3006-linux/bin:$PATH"
-          sonar-scanner \
-            -Dsonar.projectKey=my-project \
-            -Dsonar.sources=. \
-            -Dsonar.host.url=https://sonarqube.satyaji.shop \
-            -Dsonar.login=$SONAR_TOKEN
+    # SonarQube Scan
+    - name: SonarQube Scan
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: |
+        curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+        unzip sonar-scanner.zip
+        export PATH="$PWD/sonar-scanner-5.0.1.3006-linux/bin:$PATH"
+        sonar-scanner \
+          -Dsonar.projectKey=my-project \
+          -Dsonar.sources=. \
+          -Dsonar.host.url=https://sonarqube.satyaji.shop \
+          -Dsonar.login=$SONAR_TOKEN
 
+    # Set up Java and Maven
     - name: Set up Java and Maven
       uses: actions/setup-java@v3
       with:
-       distribution: 'temurin'
-       java-version: '17'  # or 11, 21, etc.
-       cache: 'maven'
+        distribution: 'temurin'
+        java-version: '17'
+        cache: 'maven'
 
-      # Copy custom settings.xml and inject secrets
-      - name: Configure Maven for Nexus
-        run: |
-          mkdir -p ~/.m2
-          cp .github/maven/settings.xml ~/.m2/settings.xml
-        env:
-          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+    # Configure Maven with settings.xml
+    - name: Configure Maven for Nexus
+      run: |
+        mkdir -p ~/.m2
+        cp settings.xml ~/.m2/settings.xml
+      env:
+        NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+        NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
 
-      # Compile, Test, Build and Deploy to Nexus
-      - name: Build and Deploy with Maven
-        env:
-          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-        run: mvn clean deploy --settings ~/.m2/settings.xml
+    # Compile, Test, Package, and Deploy to Nexus
+    - name: Build and Deploy with Maven
+      env:
+        NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+        NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      run: mvn clean deploy --settings ~/.m2/settings.xml
 
-      # Docker Build
-      - name: Build Docker Image
-        run: |
-          docker build -t github-actions:${{ github.sha }} .
-          docker tag github-actions:${{ github.sha }} ${{ secrets.ECR_REPOSITORY_URI }}/github-actions:latest
+    # Docker Build
+    - name: Build Docker Image
+      run: |
+        docker build -t github-actions:${{ github.sha }} .
+        docker tag github-actions:${{ github.sha }} ${{ secrets.ECR_REPOSITORY_URI }}/github-actions:latest
 
-      # Trivy Security Scan
-      - name: Trivy Scan
-        run: docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image github-actions:${{ github.sha }}
+    # Trivy Security Scan
+    - name: Trivy Scan
+      run: docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image github-actions:${{ github.sha }}
 
-      # Configure AWS Credentials
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+    # Configure AWS Credentials
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
 
-      # Login to Amazon ECR
-      - name: Login to Amazon ECR
-        run: |
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URI }}
+    # Login to Amazon ECR
+    - name: Login to Amazon ECR
+      run: |
+        aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URI }}
 
-      # Push image to Amazon ECR
-      - name: Push Docker Image to ECR
-        run: docker push ${{ secrets.ECR_REPOSITORY_URI }}/github-actions:latest
+    # Push Docker Image to ECR
+    - name: Push Docker Image to ECR
+      run: docker push ${{ secrets.ECR_REPOSITORY_URI }}/github-actions:latest
 
-      # Update kubeconfig for EKS
-      - name: Update kubeconfig
-        run: aws eks --region ${{ secrets.AWS_REGION }} update-kubeconfig --name eks-cluster
+    # Update kubeconfig for EKS
+    - name: Update kubeconfig
+      run: aws eks --region ${{ secrets.AWS_REGION }} update-kubeconfig --name eks-cluster
 
-      # Install kubectl
-      - name: Install kubectl
-        run: |
-          curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/kubectl
-          chmod +x ./kubectl
-          sudo mv ./kubectl /usr/bin/kubectl
+    # Install kubectl
+    - name: Install kubectl
+      run: |
+        curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/kubectl
+        chmod +x ./kubectl
+        sudo mv ./kubectl /usr/bin/kubectl
 
-      # Deploy to EKS
-      - name: Deploy to Amazon EKS
-        run: |
-          kubectl apply -f k8s-manifests/deployment.yaml
-          kubectl apply -f k8s-manifests/service.yaml
-
-
-
-
+    # Deploy to Amazon EKS
+    - name: Deploy to Amazon EKS
+      run: |
+        kubectl apply -f k8s-manifests/deployment.yaml
+        kubectl apply -f k8s-manifests/service.yaml
