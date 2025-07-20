@@ -127,5 +127,17 @@
             <url>http://13.201.64.186:8081/repository/maven-snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
+<distributionManagement>
+  <repository>
+    <id>nexus</id>
+    <name>Nexus Release Repository</name>
+    <url>https://nexus.satyaji.com/repository/maven-releases/</url>
+  </repository>
+  <snapshotRepository>
+    <id>nexus</id>
+    <name>Nexus Snapshot Repository</name>
+    <url>https://nexus.satyaji.com/repository/maven-snapshots/</url>
+  </snapshotRepository>
+</distributionManagement>
 
 </project>
