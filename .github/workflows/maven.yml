@@ -112,5 +112,8 @@ jobs:
     - name: Deploy to Self-Hosted Kubernetes
       run: |
         kubectl version --client
-        kubectl get nodes
+        kubectl delete all --all -n default
         kubectl apply -f deployment-service.yaml
+        kubectl get pods
+        kubectl get svc
+        kubectl get deployments
