@@ -121,12 +121,12 @@
         <repository>
             <id>nexus</id>
             <name>Nexus Release Repository</name>
-            <url>https://nexus.satyaji.com/repository/maven-releases/</url>
+            <url>https://nexus.satyaji.shop/repository/maven-releases/</url>
         </repository>
         <snapshotRepository>
             <id>nexus</id>
             <name>Nexus Snapshot Repository</name>
-            <url>https://nexus.satyaji.com/repository/maven-snapshots/</url>
+            <url>https://nexus.satyaji.shop/repository/maven-snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
 

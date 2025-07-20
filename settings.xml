@@ -14,7 +14,7 @@
     <mirror>
       <id>nexus</id>
       <mirrorOf>*</mirrorOf>
-      <url>https://nexus.satyaji.com/repository/maven-public/</url>
+      <url>https://nexus.satyaji.shop/repository/maven-public/</url>
     </mirror>
   </mirrors>
 
@@ -24,13 +24,13 @@
       <repositories>
         <repository>
           <id>central</id>
-          <url>https://nexus.satyaji.com/repository/maven-central/</url>
+          <url>https://nexus.satyaji.shop/repository/maven-central/</url>
           <releases><enabled>true</enabled></releases>
           <snapshots><enabled>false</enabled></snapshots>
         </repository>
         <repository>
           <id>snapshots</id>
-          <url>https://nexus.satyaji.com/repository/maven-snapshots/</url>
+          <url>https://nexus.satyaji.shop/repository/maven-snapshots/</url>
           <releases><enabled>false</enabled></releases>
           <snapshots><enabled>true</enabled></snapshots>
         </repository>
@@ -38,7 +38,7 @@
       <pluginRepositories>
         <pluginRepository>
           <id>central</id>
-          <url>https://nexus.satyaji.com/repository/maven-central/</url>
+          <url>https://nexus.satyaji.shop/repository/maven-central/</url>
           <releases><enabled>true</enabled></releases>
           <snapshots><enabled>false</enabled></snapshots>
         </pluginRepository>
