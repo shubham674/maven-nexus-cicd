@@ -1,7 +1,7 @@
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
-  
+
   <servers>
     <server>
       <id>nexus</id>
@@ -29,6 +29,12 @@
           <snapshots><enabled>false</enabled></snapshots>
         </repository>
         <repository>
+          <id>releases</id>
+          <url>https://nexus.satyaji.shop/repository/maven-releases/</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+        <repository>
           <id>snapshots</id>
           <url>https://nexus.satyaji.shop/repository/maven-snapshots/</url>
           <releases><enabled>false</enabled></releases>
@@ -49,5 +55,6 @@
   <activeProfiles>
     <activeProfile>nexus</activeProfile>
   </activeProfiles>
+
 </settings>
 
