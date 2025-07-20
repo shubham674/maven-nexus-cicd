@@ -41,11 +41,12 @@ jobs:
             -Dsonar.host.url=https://sonarqube.satyaji.shop \
             -Dsonar.login=$SONAR_TOKEN
 
-      # Set up Maven
-      - name: Set up Maven
-        uses: s4u/setup-maven-action@v1
-        with:
-          maven-version: '3.8.8'
+    - name: Set up Java and Maven
+      uses: actions/setup-java@v3
+      with:
+       distribution: 'temurin'
+       java-version: '17'  # or 11, 21, etc.
+       cache: 'maven'
 
       # Copy custom settings.xml and inject secrets
       - name: Configure Maven for Nexus
