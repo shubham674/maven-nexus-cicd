@@ -9,39 +9,14 @@ on:
       - main
 
 jobs:
-  build:
+  build-deploy:
     runs-on: [self-hosted, Linux, X64]
 
     steps:
-    # Checkout code
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # Set up NodeJS
-    - name: Set up NodeJS
-      uses: actions/setup-node@v3
-      with:
-        node-version: '14'
-
-    # Install NodeJS dependencies
-    - name: Install NodeJS dependencies
-      run: npm install
-
-    # SonarQube Scan
-    - name: SonarQube Scan
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      run: |
-        curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
-        unzip sonar-scanner.zip
-        export PATH="$PWD/sonar-scanner-5.0.1.3006-linux/bin:$PATH"
-        sonar-scanner \
-          -Dsonar.projectKey=my-project \
-          -Dsonar.sources=. \
-          -Dsonar.host.url=https://sonarqube.satyaji.shop \
-          -Dsonar.login=$SONAR_TOKEN
-
-    # Set up Java and Maven
+    # Setup Java and Maven
     - name: Set up Java and Maven
       uses: actions/setup-java@v3
       with:
@@ -49,8 +24,7 @@ jobs:
         java-version: '17'
         cache: 'maven'
 
-    # Configure Maven with settings.xml
-    - name: Configure Maven for Nexus
+    - name: Configure Maven settings
       run: |
         mkdir -p ~/.m2
         cp settings.xml ~/.m2/settings.xml
@@ -58,31 +32,24 @@ jobs:
         NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
         NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
 
-    # Compile, Test, Package
-    - name: Compile, Test, and Build JAR
+    - name: Build and Deploy to Nexus
+      run: mvn clean deploy --settings ~/.m2/settings.xml
       env:
         NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
         NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-      run: mvn clean install --settings ~/.m2/settings.xml
-
-    # Deploy artifact to Nexus
-    - name: Deploy to Nexus
-      env:
-        NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-        NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-      run: mvn deploy -DskipTests --settings ~/.m2/settings.xml
 
     # Docker Build
     - name: Build Docker Image
       run: |
         docker build -t maven-nexus:${{ github.sha }} .
+        docker tag maven-nexus:${{ github.sha }} ${{ secrets.ECR_REPOSITORY_URI }}/maven-nexus:${{ github.sha }}
         docker tag maven-nexus:${{ github.sha }} ${{ secrets.ECR_REPOSITORY_URI }}/maven-nexus:latest
 
     # Trivy Security Scan
     - name: Trivy Scan
       run: docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image maven-nexus:${{ github.sha }}
 
-    # Configure AWS Credentials
+    # AWS Credentials
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
@@ -90,30 +57,35 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
-    # Login to Amazon ECR
     - name: Login to Amazon ECR
       run: |
-        aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URI }}
+        aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
+        | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URI }}
 
-    # Push Docker Image to ECR
-    - name: Push Docker Image to ECR
-      run: docker push ${{ secrets.ECR_REPOSITORY_URI }}/maven-nexus:latest
+    - name: Push Docker Images to ECR
+      run: |
+        docker push ${{ secrets.ECR_REPOSITORY_URI }}/maven-nexus:${{ github.sha }}
+        docker push ${{ secrets.ECR_REPOSITORY_URI }}/maven-nexus:latest
 
-    # Configure kubeconfig for EC2 Kubernetes cluster
+    # Prepare Deployment YAML with image tag
+    - name: Update K8s manifest with image tag
+      run: |
+        sed -i "s|IMAGE_TAG|${{ github.sha }}|g" deployment-service.yaml
+
+    # Set up kubeconfig using public IP and disable TLS verify
     - name: Configure kubeconfig
       run: |
         mkdir -p ~/.kube
         echo "${{ secrets.KUBECONFIG_CONTENT }}" | base64 -d > ~/.kube/config
         yq eval '.clusters[0].cluster["insecure-skip-tls-verify"] = true | del(.clusters[0].cluster.certificate-authority-data)' -i ~/.kube/config
         chmod 600 ~/.kube/config
-      shell: bash
 
-    # Deploy to EC2 Kubernetes
-    - name: Deploy to Self-Hosted Kubernetes
+    # Apply Kubernetes resources
+    - name: Deploy to EC2 Kubernetes Cluster
       run: |
-        kubectl version --client
         kubectl delete all --all -n default
         kubectl apply -f deployment-service.yaml
         kubectl get pods
-        kubectl get svc
         kubectl get deployments
+        kubectl get svc
+
