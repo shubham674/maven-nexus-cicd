@@ -113,5 +113,4 @@ jobs:
       run: |
         kubectl version --client
         kubectl get nodes
-        kubectl delete -f deployment-service.yaml
         kubectl apply -f deployment-service.yaml
