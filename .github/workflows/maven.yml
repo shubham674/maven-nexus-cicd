@@ -104,6 +104,7 @@ jobs:
       run: |
         mkdir -p ~/.kube
         echo "${{ secrets.KUBECONFIG_CONTENT }}" | base64 -d > ~/.kube/config
+        yq eval '.clusters[0].cluster["insecure-skip-tls-verify"] = true | del(.clusters[0].cluster.certificate-authority-data)' -i ~/.kube/config
         chmod 600 ~/.kube/config
       shell: bash
 
