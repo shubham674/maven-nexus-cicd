@@ -76,7 +76,7 @@ jobs:
     - name: Build Docker Image
       run: |
         docker build -t maven-nexus:${{ github.sha }} .
-        docker tag maven-nexus:${{ github.sha }} ${{ secrets.ECR_REPOSITORY_URI }}/maven-nexus
+        docker tag maven-nexus:${{ github.sha }} ${{ secrets.ECR_REPOSITORY_URI }}/maven-nexus:latest
 
     # Trivy Security Scan
     - name: Trivy Scan
@@ -97,7 +97,7 @@ jobs:
 
     # Push Docker Image to ECR
     - name: Push Docker Image to ECR
-      run: docker push ${{ secrets.ECR_REPOSITORY_URI }}/maven-nexus
+      run: docker push ${{ secrets.ECR_REPOSITORY_URI }}/maven-nexus:latest
 
     # Configure kubeconfig for EC2 Kubernetes cluster
     - name: Configure kubeconfig
