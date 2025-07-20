@@ -76,12 +76,12 @@ jobs:
     # Docker Build
     - name: Build Docker Image
       run: |
-        docker build -t github-actions:${{ github.sha }} .
-        docker tag github-actions:${{ github.sha }} ${{ secrets.ECR_REPOSITORY_URI }}/github-actions:latest
+        docker build -t maven-nexus:${{ github.sha }} .
+        docker tag maven-nexus:${{ github.sha }} ${{ secrets.ECR_REPOSITORY_URI }}/maven-nexus:latest
 
     # Trivy Security Scan
     - name: Trivy Scan
-      run: docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image github-actions:${{ github.sha }}
+      run: docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image maven-nexus:${{ github.sha }}
 
     # Configure AWS Credentials
     - name: Configure AWS Credentials
@@ -98,7 +98,7 @@ jobs:
 
     # Push Docker Image to ECR
     - name: Push Docker Image to ECR
-      run: docker push ${{ secrets.ECR_REPOSITORY_URI }}/github-actions:latest
+      run: docker push ${{ secrets.ECR_REPOSITORY_URI }}/maven-nexus:latest
 
     # Update kubeconfig for EKS
     - name: Update kubeconfig
