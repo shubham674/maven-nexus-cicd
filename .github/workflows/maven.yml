@@ -48,7 +48,7 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
         cache: 'maven'
-
+    
     # Configure Maven with settings.xml
     - name: Configure Maven for Nexus
       run: |
@@ -57,6 +57,14 @@ jobs:
       env:
         NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
         NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+   
+
+    # ✅ Compile, Test, and Build JAR
+    - name: Compile, Test, and Build JAR
+      env:
+        NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+        NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      run: mvn clean install --settings ~/.m2/settings.xml
 
     # Compile, Test, Package, and Deploy to Nexus
     - name: Build and Deploy with Maven
