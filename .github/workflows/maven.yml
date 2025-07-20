@@ -43,7 +43,6 @@ jobs:
       run: |
         docker build -t maven-nexus:${{ github.sha }} .
         docker tag maven-nexus:${{ github.sha }} ${{ secrets.ECR_REPOSITORY_URI }}/maven-nexus:${{ github.sha }}
-        docker tag maven-nexus:${{ github.sha }} ${{ secrets.ECR_REPOSITORY_URI }}/maven-nexus:latest
 
     # Trivy Security Scan
     - name: Trivy Scan
@@ -65,7 +64,6 @@ jobs:
     - name: Push Docker Images to ECR
       run: |
         docker push ${{ secrets.ECR_REPOSITORY_URI }}/maven-nexus:${{ github.sha }}
-        docker push ${{ secrets.ECR_REPOSITORY_URI }}/maven-nexus:latest
 
     # Prepare Deployment YAML with image tag
     - name: Update K8s manifest with image tag
